@@ -18,15 +18,20 @@ inputs:
   direction:
     description: 'Search direction, specified as `first` or `last`'
     default: first
+  nth:
+    description: '0-indexed number, specifying which comment to return if multiple are found'
+    default: 0
 outputs:
   comment-id:
     description: 'The id of the matching comment found.'
+  comment-node-id:
+    description: 'The GraphQL node id of the matching comment found.'
   comment-body:
     description: 'The body of the matching comment found.'
   comment-author:
     description: 'The author of the matching comment found.'
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'dist/index.js'
 branding:
   icon: 'search'

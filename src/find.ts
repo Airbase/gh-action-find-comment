@@ -8,14 +8,33 @@ export interface Inputs {
   bodyIncludes: string
   bodyRegex: string
   direction: string
+  nth: number
 }
 
 export interface Comment {
   id: number
+  node_id: string
   body?: string
   user: {
     login: string
   } | null
+  created_at: string
+}
+
+function stringToRegex(s: string): RegExp {
+  const m = s.match(/^(.)(.*?)\1([gimsuy]*)$/)
+  if (m) return new RegExp(m[2], m[3])
+  else return new RegExp(s)
+}
+
+async function fetchComments(inputs: Inputs): Promise<Comment[]> {
+  const octokit = github.getOctokit(inputs.token)
+  const [owner, repo] = inputs.repository.split('/')
+  return await octokit.paginate(octokit.rest.issues.listComments, {
+    owner: owner,
+    repo: repo,
+    issue_number: inputs.issueNumber
+  })
 }
 
 export function findCommentPredicate(
@@ -30,45 +49,31 @@ export function findCommentPredicate(
       ? comment.body.includes(inputs.bodyIncludes)
       : true) &&
     (inputs.bodyRegex && comment.body
-      ? comment.body.match(inputs.bodyRegex) !== null
+      ? comment.body.match(stringToRegex(inputs.bodyRegex)) !== null
       : true)
   )
+}
+
+export function findMatchingComment(
+  inputs: Inputs,
+  comments: Comment[]
+): Comment | undefined {
+  if (inputs.direction == 'last') {
+    comments.reverse()
+  }
+  const matchingComments = comments.filter(comment =>
+    findCommentPredicate(inputs, comment)
+  )
+  const comment = matchingComments[inputs.nth]
+  if (comment) {
+    return comment
+  }
+  return undefined
 }
 
 export async function findComment(
   inputs: Inputs
 ): Promise<Comment | undefined> {
-  const octokit = github.getOctokit(inputs.token)
-  const [owner, repo] = inputs.repository.split('/')
-
-  const parameters = {
-    owner: owner,
-    repo: repo,
-    issue_number: inputs.issueNumber
-  }
-
-  if (inputs.direction == 'first') {
-    for await (const {data: comments} of octokit.paginate.iterator(
-      octokit.rest.issues.listComments,
-      parameters
-    )) {
-      // Search each page for the comment
-      const comment = comments.find(comment =>
-        findCommentPredicate(inputs, comment)
-      )
-      if (comment) return comment
-    }
-  } else {
-    // direction == 'last'
-    const comments = await octokit.paginate(
-      octokit.rest.issues.listComments,
-      parameters
-    )
-    comments.reverse()
-    const comment = comments.find(comment =>
-      findCommentPredicate(inputs, comment)
-    )
-    if (comment) return comment
-  }
-  return undefined
+  const comments = await fetchComments(inputs)
+  return findMatchingComment(inputs, comments)
 }

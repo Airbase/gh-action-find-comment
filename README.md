@@ -12,7 +12,7 @@ The action will output the comment ID of the comment matching the search criteri
 
 ```yml
       - name: Find Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v4
         id: fc
         with:
           issue-number: 1
@@ -23,7 +23,7 @@ The action will output the comment ID of the comment matching the search criteri
 
 ```yml
       - name: Find Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v4
         id: fc
         with:
           issue-number: 1
@@ -34,7 +34,7 @@ The action will output the comment ID of the comment matching the search criteri
 
 ```yml
       - name: Find Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v4
         id: fc
         with:
           issue-number: 1
@@ -46,7 +46,7 @@ The action will output the comment ID of the comment matching the search criteri
 
 ```yml
       - name: Find Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v4
         id: fc
         with:
           issue-number: 1
@@ -57,12 +57,24 @@ The action will output the comment ID of the comment matching the search criteri
 
 ```yml
       - name: Find Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v4
         id: fc
         with:
           issue-number: 1
           body-includes: search string 1
           direction: last
+```
+
+### Find the nth comment containing the specified string
+
+```yml
+      - name: Find Comment
+        uses: peter-evans/find-comment@v4
+        id: fc
+        with:
+          issue-number: 1
+          body-includes: search string 1
+          nth: 1 # second matching comment (0-indexed)
 ```
 
 ### Action inputs
@@ -76,10 +88,11 @@ The action will output the comment ID of the comment matching the search criteri
 | `body-includes` | A string to search for in the body of comments. | |
 | `body-regex` | A regular expression to search for in the body of comments. | |
 | `direction` | Search direction, specified as `first` or `last` | `first` |
+| `nth` | 0-indexed number, specifying which comment to return if multiple are found | 0 |
 
 #### Outputs
 
-The `comment-id`, `comment-body` and `comment-author` of the matching comment found will be output for use in later steps.
+The `comment-id`, `comment-node-id`, `comment-body`, `comment-author` and `comment-created-at` of the matching comment found will be output for use in later steps.
 They will be empty strings if no matching comment was found.
 Note that in order to read the step outputs the action step must have an id.
 
@@ -88,15 +101,17 @@ e.g. If `comment-id` is an empty string `steps.fc.outputs.comment-id == 0` evalu
 
 ```yml
       - name: Find Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v4
         id: fc
         with:
           issue-number: 1
           body-includes: search string 1
       - run: |
           echo ${{ steps.fc.outputs.comment-id }}
+          echo ${{ steps.fc.outputs.comment-node-id }}
           echo ${{ steps.fc.outputs.comment-body }}
           echo ${{ steps.fc.outputs.comment-author }}
+          echo ${{ steps.fc.outputs.comment-created-at }}
 ```
 
 ### Accessing issues and pull requests in other repositories
